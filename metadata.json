@@ -1,0 +1,8 @@
+{
+  "name": "Remix অপূর্ব ডিজিটাল ষ্টুডিও — Opoorbo Digital Studio",
+  "description": "অপূর্ব ডিজিটাল ষ্টুডিওর ক্লাউড বিলিং রিসিট, কাস্টমার বকেয়া খাতা, মাসিক হিসাব, Google Drive স্বয়ংক্রিয় ব্যাকআপ এবং WhatsApp PDF ইনভয়েস সিস্টেম।",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,340 @@
+{
+  "entities": {
+    "StudioSettings": {
+      "title": "StudioSettings",
+      "description": "Studio branding, contact, WhatsApp sender config, and Drive backup preferences for Opoorbo Digital Studio.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "studioName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "proprietorName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "mobile": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 24
+        },
+        "whatsappNumber": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 24
+        },
+        "address": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "nextSerial": {
+          "type": "number"
+        },
+        "autoBackupDrive": {
+          "type": "boolean"
+        },
+        "driveFolderId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "lastDriveBackupAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "whatsappWebhookUrl": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "studioName",
+        "proprietorName",
+        "mobile",
+        "whatsappNumber",
+        "address",
+        "nextSerial",
+        "autoBackupDrive",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer profile and aggregated billing/due balance ledger entry.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "serialNo": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 24
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "totalBilled": {
+          "type": "number"
+        },
+        "totalPaid": {
+          "type": "number"
+        },
+        "totalDue": {
+          "type": "number"
+        },
+        "invoiceCount": {
+          "type": "number"
+        },
+        "lastVisitDate": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "serialNo",
+        "name",
+        "phone",
+        "totalBilled",
+        "totalPaid",
+        "totalDue",
+        "invoiceCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Customer billing receipt / invoice with itemized services, payment, due balance, Drive link, and WhatsApp status.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "serialNumber": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "serialIndex": {
+          "type": "number"
+        },
+        "customerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "customerPhone": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 24
+        },
+        "invoiceDate": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 32
+        },
+        "deliveryDate": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "monthKey": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^[0-9]{4}-[0-9]{2}$"
+        },
+        "items": {
+          "type": "array"
+        },
+        "subtotal": {
+          "type": "number"
+        },
+        "discount": {
+          "type": "number"
+        },
+        "netTotal": {
+          "type": "number"
+        },
+        "paidAmount": {
+          "type": "number"
+        },
+        "dueAmount": {
+          "type": "number"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["cash", "bkash", "nagad", "rocket", "bank"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["paid", "partial", "due"]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "driveFileId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "driveWebViewLink": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "whatsappSentAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "serialNumber",
+        "serialIndex",
+        "customerId",
+        "customerName",
+        "customerPhone",
+        "invoiceDate",
+        "monthKey",
+        "items",
+        "subtotal",
+        "discount",
+        "netTotal",
+        "paidAmount",
+        "dueAmount",
+        "paymentMethod",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Monthly studio operational expense entry for accounting and net profit calculation.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "category": {
+          "type": "string",
+          "enum": ["supplies", "rent", "utilities", "equipment", "salary", "other"]
+        },
+        "amount": {
+          "type": "number"
+        },
+        "expenseDate": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 32
+        },
+        "monthKey": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^[0-9]{4}-[0-9]{2}$"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "title",
+        "category",
+        "amount",
+        "expenseDate",
+        "monthKey",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/StudioSettings" },
+      "description": "Owner-isolated studio configuration and backup status."
+    },
+    "/users/{userId}/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Owner-isolated customer ledger with serial numbers and due balances."
+    },
+    "/users/{userId}/invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/Invoice" },
+      "description": "Owner-isolated customer billing receipts and invoices."
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "Owner-isolated monthly studio expense entries."
+    }
+  }
+}

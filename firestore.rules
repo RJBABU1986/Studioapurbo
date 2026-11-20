@@ -1,0 +1,298 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // Global Hardened Primitives
+    // =========================================================================
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedAuth() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true ||
+        (request.auth.token.phone_number is string && request.auth.token.phone_number.size() >= 6)
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email == 'ranababu9496@gmail.com';
+    }
+
+    function isOwner(userId) {
+      return isVerifiedAuth() && request.auth.uid == userId;
+    }
+
+    function isValidMonthKey(key) {
+      return key is string && key.size() == 7 && key.matches('^[0-9]{4}-[0-9]{2}$');
+    }
+
+    // =========================================================================
+    // Entity Validation Blueprints (Anti-Update-Gap)
+    // =========================================================================
+
+    function isValidStudioSettings(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'studioName', 'proprietorName', 'mobile', 'whatsappNumber',
+          'address', 'nextSerial', 'autoBackupDrive', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'studioName', 'proprietorName', 'mobile', 'whatsappNumber',
+          'address', 'nextSerial', 'autoBackupDrive', 'driveFolderId',
+          'lastDriveBackupAt', 'whatsappWebhookUrl', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.ownerId) &&
+        data.ownerId == userId &&
+        data.studioName is string && data.studioName.size() >= 1 && data.studioName.size() <= 120 &&
+        data.proprietorName is string && data.proprietorName.size() >= 1 && data.proprietorName.size() <= 120 &&
+        data.mobile is string && data.mobile.size() >= 6 && data.mobile.size() <= 24 &&
+        data.whatsappNumber is string && data.whatsappNumber.size() >= 6 && data.whatsappNumber.size() <= 24 &&
+        data.address is string && data.address.size() >= 1 && data.address.size() <= 240 &&
+        data.nextSerial is number && data.nextSerial >= 1 && data.nextSerial <= 9999999 &&
+        data.autoBackupDrive is bool &&
+        (!('driveFolderId' in data) || (data.driveFolderId is string && data.driveFolderId.size() <= 128)) &&
+        (!('lastDriveBackupAt' in data) || (data.lastDriveBackupAt is string && data.lastDriveBackupAt.size() <= 64)) &&
+        (!('whatsappWebhookUrl' in data) || (data.whatsappWebhookUrl is string && data.whatsappWebhookUrl.size() <= 300)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCustomer(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'serialNo', 'name', 'phone', 'totalBilled',
+          'totalPaid', 'totalDue', 'invoiceCount', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'serialNo', 'name', 'phone', 'address', 'totalBilled',
+          'totalPaid', 'totalDue', 'invoiceCount', 'lastVisitDate',
+          'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.ownerId) &&
+        data.ownerId == userId &&
+        data.serialNo is number && data.serialNo >= 1 && data.serialNo <= 9999999 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.phone is string && data.phone.size() >= 6 && data.phone.size() <= 24 &&
+        (!('address' in data) || (data.address is string && data.address.size() <= 200)) &&
+        data.totalBilled is number && data.totalBilled >= 0 &&
+        data.totalPaid is number && data.totalPaid >= 0 &&
+        data.totalDue is number && data.totalDue >= 0 &&
+        data.invoiceCount is number && data.invoiceCount >= 0 &&
+        (!('lastVisitDate' in data) || (data.lastVisitDate is string && data.lastVisitDate.size() <= 32)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidInvoice(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'serialNumber', 'serialIndex', 'customerId', 'customerName',
+          'customerPhone', 'invoiceDate', 'monthKey', 'items', 'subtotal',
+          'discount', 'netTotal', 'paidAmount', 'dueAmount', 'paymentMethod',
+          'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'serialNumber', 'serialIndex', 'customerId', 'customerName',
+          'customerPhone', 'invoiceDate', 'deliveryDate', 'monthKey', 'items',
+          'subtotal', 'discount', 'netTotal', 'paidAmount', 'dueAmount',
+          'paymentMethod', 'status', 'notes', 'driveFileId', 'driveWebViewLink',
+          'whatsappSentAt', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.ownerId) &&
+        data.ownerId == userId &&
+        data.serialNumber is string && data.serialNumber.size() >= 1 && data.serialNumber.size() <= 32 &&
+        data.serialIndex is number && data.serialIndex >= 1 && data.serialIndex <= 9999999 &&
+        isValidId(data.customerId) &&
+        data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120 &&
+        data.customerPhone is string && data.customerPhone.size() >= 6 && data.customerPhone.size() <= 24 &&
+        data.invoiceDate is string && data.invoiceDate.size() >= 8 && data.invoiceDate.size() <= 32 &&
+        (!('deliveryDate' in data) || (data.deliveryDate is string && data.deliveryDate.size() <= 32)) &&
+        isValidMonthKey(data.monthKey) &&
+        data.items is list && data.items.size() >= 1 && data.items.size() <= 25 &&
+        data.items[0] is map &&
+        data.subtotal is number && data.subtotal >= 0 &&
+        data.discount is number && data.discount >= 0 &&
+        data.netTotal is number && data.netTotal >= 0 &&
+        data.paidAmount is number && data.paidAmount >= 0 &&
+        data.dueAmount is number && data.dueAmount >= 0 &&
+        data.paymentMethod in ['cash', 'bkash', 'nagad', 'rocket', 'bank'] &&
+        data.status in ['paid', 'partial', 'due'] &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+        (!('driveFileId' in data) || (data.driveFileId is string && data.driveFileId.size() <= 128)) &&
+        (!('driveWebViewLink' in data) || (data.driveWebViewLink is string && data.driveWebViewLink.size() <= 300)) &&
+        (!('whatsappSentAt' in data) || (data.whatsappSentAt is string && data.whatsappSentAt.size() <= 64)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidExpense(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'title', 'category', 'amount', 'expenseDate',
+          'monthKey', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'title', 'category', 'amount', 'expenseDate',
+          'monthKey', 'notes', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.ownerId) &&
+        data.ownerId == userId &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 140 &&
+        data.category in ['supplies', 'rent', 'utilities', 'equipment', 'salary', 'other'] &&
+        data.amount is number && data.amount >= 0 &&
+        data.expenseDate is string && data.expenseDate.size() >= 8 && data.expenseDate.size() <= 32 &&
+        isValidMonthKey(data.monthKey) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 300)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // =========================================================================
+    // Collection Match Blocks (Owner-Isolated + Admin Audit)
+    // =========================================================================
+
+    match /users/{userId}/settings/{settingId} {
+      allow get: if isValidId(userId) && isValidId(settingId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && (
+        (isVerifiedAuth() && resource.data.ownerId == request.auth.uid) ||
+        isAdmin()
+      );
+      allow create: if isValidId(userId) && isValidId(settingId) &&
+        isOwner(userId) &&
+        isValidStudioSettings(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) && isValidId(settingId) &&
+        (isOwner(userId) || isAdmin()) &&
+        isValidStudioSettings(incoming(), userId) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'studioName', 'proprietorName', 'mobile', 'whatsappNumber',
+            'address', 'nextSerial', 'autoBackupDrive', 'driveFolderId',
+            'lastDriveBackupAt', 'whatsappWebhookUrl', 'updatedAt'
+          ]) ||
+          isAdmin()
+        );
+      allow delete: if isValidId(userId) && isValidId(settingId) && (isOwner(userId) || isAdmin());
+    }
+
+    match /users/{userId}/customers/{customerId} {
+      allow get: if isValidId(userId) && isValidId(customerId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && (
+        (isVerifiedAuth() && resource.data.ownerId == request.auth.uid) ||
+        isAdmin()
+      );
+      allow create: if isValidId(userId) && isValidId(customerId) &&
+        isOwner(userId) &&
+        isValidCustomer(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) && isValidId(customerId) &&
+        (isOwner(userId) || isAdmin()) &&
+        isValidCustomer(incoming(), userId) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'phone', 'address', 'updatedAt'
+          ]) ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'phone', 'totalBilled', 'totalPaid', 'totalDue',
+            'invoiceCount', 'lastVisitDate', 'updatedAt'
+          ]) ||
+          isAdmin()
+        );
+      allow delete: if isValidId(userId) && isValidId(customerId) && (isOwner(userId) || isAdmin());
+    }
+
+    match /users/{userId}/invoices/{invoiceId} {
+      allow get: if isValidId(userId) && isValidId(invoiceId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && (
+        (isVerifiedAuth() && resource.data.ownerId == request.auth.uid) ||
+        isAdmin()
+      );
+      allow create: if isValidId(userId) && isValidId(invoiceId) &&
+        isOwner(userId) &&
+        isValidInvoice(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/users/$(userId)/customers/$(incoming().customerId));
+      allow update: if isValidId(userId) && isValidId(invoiceId) &&
+        (isOwner(userId) || isAdmin()) &&
+        isValidInvoice(incoming(), userId) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            existing().status != 'paid' &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'paidAmount', 'dueAmount', 'status', 'paymentMethod', 'notes', 'updatedAt'
+            ])
+          ) ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'driveFileId', 'driveWebViewLink', 'whatsappSentAt', 'updatedAt'
+          ]) ||
+          (
+            existing().status != 'paid' &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'customerName', 'customerPhone', 'invoiceDate', 'deliveryDate',
+              'monthKey', 'items', 'subtotal', 'discount', 'netTotal',
+              'paidAmount', 'dueAmount', 'paymentMethod', 'status', 'notes', 'updatedAt'
+            ])
+          ) ||
+          isAdmin()
+        );
+      allow delete: if isValidId(userId) && isValidId(invoiceId) && (isOwner(userId) || isAdmin());
+    }
+
+    match /users/{userId}/expenses/{expenseId} {
+      allow get: if isValidId(userId) && isValidId(expenseId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && (
+        (isVerifiedAuth() && resource.data.ownerId == request.auth.uid) ||
+        isAdmin()
+      );
+      allow create: if isValidId(userId) && isValidId(expenseId) &&
+        isOwner(userId) &&
+        isValidExpense(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) && isValidId(expenseId) &&
+        (isOwner(userId) || isAdmin()) &&
+        isValidExpense(incoming(), userId) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'category', 'amount', 'expenseDate', 'monthKey', 'notes', 'updatedAt'
+          ]) ||
+          isAdmin()
+        );
+      allow delete: if isValidId(userId) && isValidId(expenseId) && (isOwner(userId) || isAdmin());
+    }
+  }
+}
